@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test inteligencji</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <h1>Test inteligencji</h1>
+  <p class="muted">8 pytań · logika, wzorce, język, myślenie praktyczne. Czas jest mierzony, ale nie wpływa na wynik.</p>
+
+  <!-- Native GET submit: answers travel to results.html in the URL, works from file:// -->
+  <form id="test" action="results.html" method="get">
+    <div id="questions"></div>
+    <input type="hidden" name="t" id="t">
+    <button type="submit">Wyślij odpowiedzi</button>
+  </form>
+</main>
+
+<script src="questions.js"></script>
+<script>
+  const start = Date.now();
+  const box = document.getElementById("questions");
+
+  QUESTIONS.forEach((q, i) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    let input;
+    if (q.type === "choice") {
+      input = q.options.map(o =>
+        `<label><input type="radio" name="${q.id}" value="${o}" required> ${o}</label>`).join("");
+    } else {
+      input = `<input type="number" name="${q.id}" required>`;
+    }
+    card.innerHTML = `<div class="area">${q.area}</div><p><b>${i + 1}.</b> ${q.text}</p>${input}`;
+    box.appendChild(card);
+  });
+
+  document.getElementById("test").addEventListener("submit", () => {
+    document.getElementById("t").value = Math.round((Date.now() - start) / 1000);
+  });
+</script>
+</body>
+</html>

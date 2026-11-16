@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wyniki testu</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <h1>Twój wynik</h1>
+  <div class="card">
+    <p class="big" id="score"></p>
+    <p id="verdict"></p>
+    <p class="muted" id="time"></p>
+  </div>
+
+  <h2>Obszary</h2>
+  <div class="card"><table id="areas"></table></div>
+
+  <h2>Odpowiedzi</h2>
+  <div class="card"><table id="answers"></table></div>
+
+  <a class="btn" href="index.html">Rozwiąż ponownie</a>
+</main>
+
+<script src="questions.js"></script>
+<script>
+  const params = new URLSearchParams(location.search);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  let total = 0;
+  const areas = {};
+  const rows = QUESTIONS.map((q, i) => {
+    const given = params.get(q.id) ?? "";
+    const correct = q.type === "number" ? Number(given) === q.answer && given !== "" : given === q.answer;
+    if (correct) total++;
+    areas[q.area] ??= { got: 0, max: 0 };
+    areas[q.area].max++;
+    if (correct) areas[q.area].got++;
+    return `<tr><td>${i + 1}. ${esc(q.text)}</td>
+      <td class="${correct ? "ok" : "bad"}">${correct ? "✓" : "✗"} ${esc(given || "—")}
+      ${correct ? "" : `<br><span class="muted">poprawna: ${q.answer}</span>`}</td></tr>`;
+  });
+
+  const verdict = total >= 7 ? "Świetnie – rozwiązujesz nowe problemy bez potknięć."
+                : total >= 4 ? "Solidnie – większość pułapek ominięta."
+                : "Rozgrzewka – spróbuj jeszcze raz, na spokojnie.";
+
+  document.getElementById("score").textContent = `${total} / ${QUESTIONS.length}`;
+  document.getElementById("verdict").textContent = verdict;
+  const t = Number(params.get("t"));
+  if (t) document.getElementById("time").textContent = `Czas: ${Math.floor(t / 60)} min ${t % 60} s`;
+  document.getElementById("areas").innerHTML = Object.entries(areas)
+    .map(([a, v]) => `<tr><td>${a}</td><td>${v.got} / ${v.max}</td></tr>`).join("");
+  document.getElementById("answers").innerHTML = rows.join("");
+</script>
+</body>
+</html>

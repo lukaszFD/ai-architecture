@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World</title>
+    <style>
+        html, body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            background: radial-gradient(ellipse at center, #1b1f3a 0%, #090a14 70%, #000 100%);
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        }
+        canvas {
+            position: fixed;
+            inset: 0;
+            display: block;
+        }
+        h1 {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            margin: 0;
+            font-size: clamp(3rem, 12vw, 9rem);
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+            color: #fff;
+            text-shadow:
+                0 0 10px #fff,
+                0 0 20px #8ef,
+                0 0 40px #4cf,
+                0 0 80px #a6f,
+                0 0 120px #a6f;
+            animation: glow 3s ease-in-out infinite alternate, float 6s ease-in-out infinite;
+            user-select: none;
+        }
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 10px #fff, 0 0 20px #8ef, 0 0 40px #4cf, 0 0 80px #a6f, 0 0 120px #a6f;
+            }
+            to {
+                text-shadow: 0 0 5px #fff, 0 0 30px #f8e, 0 0 60px #f4c, 0 0 100px #4cf, 0 0 160px #4cf;
+            }
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(-50%, -50%); }
+            50%      { transform: translate(-50%, -54%); }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="sky"></canvas>
+    <h1>Hello World</h1>
+
+    <script>
+        const canvas = document.getElementById('sky');
+        const ctx = canvas.getContext('2d');
+        let w, h, stars = [], shooting = [];
+
+        function resize() {
+            w = canvas.width = window.innerWidth;
+            h = canvas.height = window.innerHeight;
+            stars = Array.from({ length: Math.floor(w * h / 2500) }, () => ({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                r: Math.random() * 1.6 + 0.2,
+                phase: Math.random() * Math.PI * 2,
+                speed: Math.random() * 0.02 + 0.005,
+                drift: Math.random() * 0.15 + 0.02
+            }));
+        }
+
+        function spawnShootingStar() {
+            shooting.push({
+                x: Math.random() * w,
+                y: Math.random() * h * 0.5,
+                len: Math.random() * 120 + 80,
+                vx: -(Math.random() * 8 + 6),
+                vy: Math.random() * 4 + 3,
+                life: 1
+            });
+        }
+
+        let mouseX = 0, mouseY = 0;
+        window.addEventListener('mousemove', e => {
+            mouseX = (e.clientX / w - 0.5) * 20;
+            mouseY = (e.clientY / h - 0.5) * 20;
+        });
+
+        function draw() {
+            ctx.clearRect(0, 0, w, h);
+
+            for (const s of stars) {
+                s.phase += s.speed;
+                s.y += s.drift;
+                if (s.y > h) { s.y = 0; s.x = Math.random() * w; }
+
+                const alpha = 0.5 + Math.sin(s.phase) * 0.5;
+                const x = s.x + mouseX * s.r;
+                const y = s.y + mouseY * s.r;
+
+                ctx.beginPath();
+                ctx.arc(x, y, s.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+                ctx.shadowBlur = s.r * 6;
+                ctx.shadowColor = '#bdf';
+                ctx.fill();
+            }
+            ctx.shadowBlur = 0;
+
+            for (let i = shooting.length - 1; i >= 0; i--) {
+                const m = shooting[i];
+                const grad = ctx.createLinearGradient(
+                    m.x, m.y,
+                    m.x - m.vx / 10 * m.len / 10, m.y - m.vy / 10 * m.len / 10
+                );
+                grad.addColorStop(0, `rgba(255,255,255,${m.life})`);
+                grad.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(m.x, m.y);
+                ctx.lineTo(m.x - m.vx * m.len / 15, m.y - m.vy * m.len / 15);
+                ctx.stroke();
+
+                m.x += m.vx;
+                m.y += m.vy;
+                m.life -= 0.012;
+                if (m.life <= 0 || m.x < -200 || m.y > h + 200) shooting.splice(i, 1);
+            }
+
+            if (Math.random() < 0.01) spawnShootingStar();
+
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        draw();
+    </script>
+</body>
+</html>
